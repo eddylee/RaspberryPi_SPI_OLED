@@ -32,9 +32,9 @@ bool oled_paintFullScreen(int fd,int color);
 bool oled_setCommandMode(bool mode);
 bool oled_transmitFullScreen(int fd,unsigned char* pixmap);
 
-bool gpiolib_init(void);
-bool gpiolib_setDirectionGpio17(bool in_xout);
-bool gpiolib_setDataGpio17(bool level);
+
+
+
 
 bool oled_init(int fd)
 {
@@ -115,6 +115,7 @@ int main(int argc,char** argv)
 
     test();
 }
+
 
 void test(void)
 {
@@ -289,59 +290,3 @@ bool oled_setCommandMode(bool mode)
     return (gpiolib_setDataGpio17(!mode));
 }
 
-
-//////////////////////////////////////////////////
-#define BCM2708_PERI_BASE	(0x20000000)
-#define GPIO_BASE		(BCM2708_PERI_BASE + 0x200000)
-#define BLOCK_SIZE		(1024*4)
-
-#define INP_GPIO(g)		*(gpio_mem+((g)/10)) &= ~(7<<(((g)%10)*3))
-#define OUT_GPIO(g)		*(gpio_mem+((g)/10)) |=  (1<<(((g)%10)*3))
-#define GPIO_SET		*(gpio_mem+7)
-#define GPIO_CLR		*(gpio_mem+10)
-
-static volatile unsigned* gpio_mem = NULL;
-
-bool gpiolib_init(void)
-{
-    int memfd;
-    bool ret = false;
-
-    memfd = open("/dev/mem",O_RDWR|O_SYNC);
-    if(memfd < 0){
-	printf("%s : memory open error\n",__func__);
-    } else {
-	gpio_mem = mmap(NULL,BLOCK_SIZE,PROT_READ|PROT_WRITE,MAP_SHARED,memfd,GPIO_BASE);
-	close(memfd);
-	ret = true;
-    }
-    return(ret);
-}
-
-bool gpiolib_setDirectionGpio17(bool in_xout)
-{
-    bool ret = false;
-
-    if(gpio_mem != NULL){
-	INP_GPIO(17);
-	if(in_xout == false){
-	    OUT_GPIO(17);
-	    ret = true;
-	}
-    }
-    return(ret);
-}
-
-bool gpiolib_setDataGpio17(bool level)
-{
-    bool ret = false;
-
-    if(gpio_mem != NULL){
-	if(level == true){
-	    GPIO_SET = 1 << 17;
-	} else {
-	    GPIO_CLR = 1 << 17;
-	}
-    }
-    return(ret);
-}
