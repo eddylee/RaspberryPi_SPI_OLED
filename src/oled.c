@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -25,16 +26,13 @@
 #include <stdbool.h>
 #include <sys/mman.h>
 #include "fb.h"
+#include "gpiolib.h"
 
 bool oled_init(int fd);
 bool oled_sendPixel(int fd,int pixel);
 bool oled_paintFullScreen(int fd,int color);
 bool oled_setCommandMode(bool mode);
 bool oled_transmitFullScreen(int fd,unsigned char* pixmap);
-
-
-
-
 
 bool oled_init(int fd)
 {

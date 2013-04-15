@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -80,7 +81,10 @@ bool fb_getTopLeftBuff_for_OLED(unsigned char* buff,int size_x,int size_y)
     tmp_buffp = tmp_buff;
 
     for(y=0;y<size_y;y++){
-	memcpy(tmp_buffp,fb_mem + y * ((screen_size_x * screen_bpp) >> 3),(size_x * screen_bpp) >> 3);
+	memcpy(
+	    tmp_buffp,
+	    (void*)(fb_mem + y * ((screen_size_x * screen_bpp) >> 3)),
+	    (size_x * screen_bpp) >> 3);
 	tmp_buffp += size_x * 2;
     }
 
@@ -95,9 +99,7 @@ static void fb_memconvert(unsigned char* dest,unsigned char* src,int size)
     unsigned char tmpr,tmpg,tmpb;
     unsigned short s,sd;
 
-#if 1
     for(i=0;i<size;i+=2){
-#if 1
 	s = src[i+1] << 8 | src[i];
 	tmpr = (s >> 11) & 0x1f;
 	tmpg = (s >>  6) & 0x1f;
@@ -109,9 +111,5 @@ static void fb_memconvert(unsigned char* dest,unsigned char* src,int size)
 	sd = (tmpr) | (tmpg << 6) | (tmpb << 11);
 	dest[i  ] = (sd >> 8) & 0xff;
 	dest[i+1] = (sd     ) & 0xff;
-#endif
     }
-#else
-    memcpy(dest,src,size);
-#endif
 }
