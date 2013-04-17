@@ -33,6 +33,7 @@ bool oled_sendPixel(int fd,int pixel);
 bool oled_paintFullScreen(int fd,int color);
 bool oled_setCommandMode(bool mode);
 bool oled_transmitFullScreen(int fd,unsigned char* pixmap);
+void oled_main(void);
 
 bool oled_init(int fd)
 {
@@ -44,12 +45,12 @@ bool oled_init(int fd)
 	0x15,0x00,0x5f,
 
 	// Contrast
-	0xa0,0x74, // 0111 0100
+	0xa0,0x74,
 	0xa1,0x00,
 	0xa2,0x00,
 	0xa4,
 	0xa8,0x3f,
-	//0xad,0x8f, // ?
+	//0xad,0x8f,
 	//0xb0,0x1a,
 	//0xb1,0x74,
 	//0xb3,0xd0,
@@ -69,22 +70,11 @@ bool oled_init(int fd)
   
     oled_setCommandMode(true);
 
-#if 1
     result = write(fd,init_data,sizeof(init_data));
     if(result < 0){
 	printf("%s : data write error\n",__func__);
 	return(false);
     }
-#else
-    int i;
-    for(i=0;i<sizeof(init_data);i++){
-	result = write(fd,&init_data[i],1);
-	if(result < 0){
-	    printf("%s : error occurred,pos=%d\n",__func__,i);
-	    return(false);
-	}
-    }
-#endif
 
     oled_setCommandMode(false);
   
@@ -92,7 +82,6 @@ bool oled_init(int fd)
 }
 
 
-void test(void);
 
 int main(int argc,char** argv)
 {
@@ -111,11 +100,10 @@ int main(int argc,char** argv)
 	return(-1);
     }
 
-    test();
+    oled_main();
 }
 
-
-void test(void)
+void oled_main(void)
 {
     int fd;
     int result;
@@ -169,21 +157,6 @@ void test(void)
 
     oled_init(fd);
 
-#if 0
-    oled_setCommandMode(true);
-    while(1){
-	unsigned char data[1];
-
-	data[0] = 0xae;
-	write(fd,data,1);
-	sleep(1);
-
-	data[1] = 0xaf;
-	write(fd,data,1);
-	sleep(1);
-    }
-#endif
-
     {
 	unsigned char buff[96*64*2];
 	bool r;
@@ -199,29 +172,6 @@ void test(void)
 		printf("%s : oled_transmitFullScreen returns error\n",__func__);
 		return;
 	    }
-	}
-    }
-
-    while(1){
-	oled_paintFullScreen(fd,0x0018);
-	//    sleep(1);
-	oled_paintFullScreen(fd,0x07e0);
-	//sleep(1);
-	oled_paintFullScreen(fd,0xf800);
-	//sleep(1);
-    }
-    sleep(10);
-    {
-	unsigned char data[512];
-	int i,j;
-
-	for(j=0;j<100;j++){
-	    for(i=0;i<256;i++){
-		memset(data,i,sizeof(data));
-		write(fd,data,sizeof(data));
-		printf("display %d\n",i);
-	    }
-	    usleep(100);
 	}
     }
 
@@ -243,15 +193,6 @@ bool oled_sendPixel(int fd,int color)
     return(ret);
 }
 
-#if 0
-bool oled_paintFullScreen(int fd,int color)
-{
-    int i;
-    for(i=0;i<64*96;i++){
-	oled_sendPixel(fd,color);
-    }
-}
-#else
 bool oled_paintFullScreen(int fd,int color)
 {
     int i;
@@ -267,7 +208,6 @@ bool oled_paintFullScreen(int fd,int color)
 
     oled_transmitFullScreen(fd,buff);
 }
-#endif
 
 bool oled_transmitFullScreen(int fd,unsigned char* pixmap)
 {
@@ -287,4 +227,3 @@ bool oled_setCommandMode(bool mode)
 {
     return (gpiolib_setDataGpio17(!mode));
 }
-

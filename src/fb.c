@@ -40,17 +40,16 @@ bool fb_init(void)
 {
     int fb_fd;
     struct fb_var_screeninfo vinfo;
-    //struct fb_fix_screeninfo finfo;
 
     fb_fd = open("/dev/fb0",O_RDWR);
     if(fb_fd < 0){
 	printf("framebuffer open error\n");
-	return(-1);
+	return(false);
     }
 
     if(ioctl(fb_fd,FBIOGET_VSCREENINFO,&vinfo)){
 	printf("screen information retrieve error\n");
-	return(-1);
+	return(false);
     }
     printf("%dx%d,%dbpp\n",vinfo.xres,vinfo.yres,vinfo.bits_per_pixel);
 
@@ -63,7 +62,14 @@ bool fb_init(void)
 	return(false);
     }
 
-    fb_mem = (volatile unsigned char*)mmap(NULL,(vinfo.xres*vinfo.yres*vinfo.bits_per_pixel) >> 3,PROT_READ|PROT_WRITE,MAP_SHARED,fb_fd,0);
+    fb_mem = (volatile unsigned char*)mmap(
+	NULL,
+	(vinfo.xres*vinfo.yres*vinfo.bits_per_pixel) >> 3,
+	PROT_READ|PROT_WRITE,
+	MAP_SHARED,
+	fb_fd,
+	0);
+
     if(fb_mem == NULL){
 	printf("framebuffer mapping error\n");
 	return(false);
@@ -105,9 +111,7 @@ static void fb_memconvert(unsigned char* dest,unsigned char* src,int size)
 	tmpg = (s >>  6) & 0x1f;
 	tmpb = (s      ) & 0x1f;
 
-	// bgr gbr rgb grb rbg brg
-
-	// BBBBBGGGGGGRRRRR
+	// OLED format : BBBBBGGGGGGRRRRR
 	sd = (tmpr) | (tmpg << 6) | (tmpb << 11);
 	dest[i  ] = (sd >> 8) & 0xff;
 	dest[i+1] = (sd     ) & 0xff;
