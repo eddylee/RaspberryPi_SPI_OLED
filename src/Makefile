@@ -4,7 +4,7 @@
 # Coded by Yasuhiro ISHII,4/15/2013
 #
 
-CROSS		 = arm-none-linux-gnueabi-
+CROSS		 = 
 CC		 = $(CROSS)gcc
 CFLAGS		 = -O0 -I. -g
 OBJS		 = oled.o fb.o gpiolib.o

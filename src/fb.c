@@ -35,11 +35,13 @@ volatile unsigned char* fb_mem;
 static int screen_size_x = 0;
 static int screen_size_y = 0;
 static int screen_bpp = 0;
+static int screen_line_length = 0;
 
 bool fb_init(void)
 {
     int fb_fd;
     struct fb_var_screeninfo vinfo;
+    struct fb_fix_screeninfo finfo;
 
     fb_fd = open("/dev/fb0",O_RDWR);
     if(fb_fd < 0){
@@ -51,12 +53,19 @@ bool fb_init(void)
 	printf("screen information retrieve error\n");
 	return(false);
     }
-    printf("%dx%d,%dbpp\n",vinfo.xres,vinfo.yres,vinfo.bits_per_pixel);
+
+    if(ioctl(fb_fd,FBIOGET_FSCREENINFO,&finfo)){
+      printf("err\n");
+      return(false);
+    }
 
     screen_size_x = vinfo.xres;
     screen_size_y = vinfo.yres;
     screen_bpp = vinfo.bits_per_pixel;
-  
+    screen_line_length = finfo.line_length;
+
+    printf("%dx%d,%dbpp line_len=%d(xres*bpp/8=%d)\n",vinfo.xres,vinfo.yres,vinfo.bits_per_pixel,finfo.line_length,vinfo.xres*screen_bpp/8);
+
     if(vinfo.bits_per_pixel != 16){
 	printf("This color mode is not supported.\nOnly 16bpp is supported currently\n");
 	return(false);
@@ -64,13 +73,13 @@ bool fb_init(void)
 
     fb_mem = (volatile unsigned char*)mmap(
 	NULL,
-	(vinfo.xres*vinfo.yres*vinfo.bits_per_pixel) >> 3,
+	(screen_line_length*screen_size_y),
 	PROT_READ|PROT_WRITE,
 	MAP_SHARED,
 	fb_fd,
 	0);
 
-    if(fb_mem == NULL){
+    if(fb_mem == -1){
 	printf("framebuffer mapping error\n");
 	return(false);
     }
@@ -81,7 +90,7 @@ bool fb_init(void)
 bool fb_getTopLeftBuff_for_OLED(unsigned char* buff,int size_x,int size_y)
 {
     int y;
-    unsigned char tmp_buff[96*64*2];
+    unsigned char tmp_buff[OLED_SIZE_X*OLED_SIZE_Y*2];
     unsigned char* tmp_buffp;
 
     tmp_buffp = tmp_buff;
@@ -89,10 +98,11 @@ bool fb_getTopLeftBuff_for_OLED(unsigned char* buff,int size_x,int size_y)
     for(y=0;y<size_y;y++){
 	memcpy(
 	    tmp_buffp,
-	    (void*)(fb_mem + y * ((screen_size_x * screen_bpp) >> 3)),
-	    (size_x * screen_bpp) >> 3);
-	tmp_buffp += size_x * 2;
+	    (void*)(fb_mem + y * screen_line_length),
+	    (Size_x * screen_bpp) >> 3);
+	tmp_buffp += size_x * screen_bpp >> 3;
     }
+
 
     fb_memconvert(buff,tmp_buff,sizeof(tmp_buff));
 

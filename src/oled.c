@@ -161,6 +161,7 @@ void oled_main(void)
 	unsigned char buff[96*64*2];
 	bool r;
 
+
 	while(1){
 	    r = fb_getTopLeftBuff_for_OLED(buff,96,64);
 	    if(r == false){
